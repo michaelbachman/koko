@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NKO</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Only Creepster is loaded now (removed Germania One & Luckiest Guy) -->
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #0b0f14; --fg: #e5e7eb; --muted: #9ca3af;
+      --accent: #ffffff;
+      font-size: 16px;
+      --step--5: 0.49rem;
+      --step--4: 0.56rem;
+      --step--3: 0.65rem;
+      --step--2: 0.75rem;
+      --step--1: 0.875rem;
+      --step-0: 1rem;
+      --step-1: 1.15rem;
+      --step-2: 1.3225rem;
+      --step-3: 1.5209rem;
+      --step-4: 1.7490rem;
+      --step-5: 2.0114rem;
+      --step-6: 2.3131rem;
+      --step-7: 2.6600rem;
+      --step-8: 3.0590rem;
+      --step-9: 3.5179rem;
+      --step-10: 4.0456rem;
+      --step-11: 4.6524rem;
+      --step-12: 5.3503rem;
+      --step-13: 6.1528rem;
+      --step-14: 7.0757rem;
+      --step-15: 8.1371rem;
+      --step-16: 9.3576rem;
+    }
+    /* Base */
+    html, body { height: 100%; }
+    body {
+      background-color: var(--bg);
+      color: var(--fg);
+      font-family: 'Google Sans Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: var(--step-0);
+      margin: 0;
+    }
+    /* Edge-to-edge dot grid layer (no background-attachment: fixed for smoother mobile perf) */
+    .bg-dots {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 8px 8px; background-position: 0 0;
+    }
+
+    /* Layout */
+    .wrap { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; max-width: 48rem; margin: 0 auto; }
+    .center { flex: 1; display: grid; place-items: center; padding: 24px; }
+    .text-center { text-align: center; }
+
+    /* Title */
+    .creepster-regular { font-family: "Creepster", system-ui; font-weight: 400; font-style: normal; }
+    header h1 {
+      font-size: var(--step-3);
+      position: fixed;
+      top: calc(16px + env(safe-area-inset-top, 0px));
+      right: calc(16px + env(safe-area-inset-right, 0px));
+      z-index: 1000;
+      font-family: "Creepster", system-ui;
+      font-weight: 400;
+      letter-spacing: 0em;
+      line-height: 1;
+    }
+    @media (max-width: 360px) { header h1 { letter-spacing: -0.01em; font-size: var(--step-2); } }
+    @media (min-width: 1024px) { header h1 { font-size: var(--step-4); letter-spacing: 0.005em; } }
+
+    /* Countdown */
+    .countdown {
+      font-weight: 700; line-height: 1;
+      font-size: clamp(var(--step-7), 10vw, var(--step-15));
+      display: flex; gap: 16px; justify-content: center; flex-wrap: nowrap;
+      color: var(--accent, #ffffff);
+      font-variant-numeric: tabular-nums; font-feature-settings: "tnum", "zero";
+      font-family: 'Google Sans Code', Courier, monospace; transition: none;
+    }
+    .countdown span { display: inline-flex; align-items: baseline; vertical-align: baseline; }
+    .countdown span .unit { font-size: var(--step-0); margin-left: 8px; color: var(--muted); font-weight: 700; opacity: 0.8; }
+
+    /* Subline */
+    .sub {
+      font-size: var(--step--1); color: var(--muted); font-weight: 400; margin-top: 16px; padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.1); text-align: center; display: block; opacity: 0.8;
+      font-variant-numeric: tabular-nums; font-feature-settings: "tnum", "zero";
+      font-family: 'Google Sans Code', Courier, monospace; transition: none;
+    }
+
+    /* Live indicator (bottom-left) */
+    .live { font-size: var(--step--2); display: flex; align-items: center; justify-content: flex-start; color: var(--muted); font-weight: 400; opacity: 0.8; position: fixed; left: 16px; bottom: 16px; margin: 0; z-index: 1000; font-family: "Creepster", system-ui; }
+    #statusDot { width: var(--step--5); height: var(--step--5); border-radius: 50%; margin-right: 8px; background-color: var(--muted); transition: none; }
+
+    @media (max-width: 360px) { .countdown { flex-wrap: wrap; } }
+  </style>
+</head>
+<body>
+  <div class="bg-dots" aria-hidden="true"></div>
+  <div class="wrap">
+    <header>
+      <h1 class="creepster-regular">NKO</h1>
+    </header>
+
+    <main class="center">
+      <div class="text-center">
+        <div class="live" id="liveStatus">
+          <span id="statusDot"></span>
+          <span id="statusText">Disconnected</span>
+        </div>
+        <div class="countdown" id="countdown">
+          <span><span id="hVal">—</span><span class="unit">H</span></span>
+          <span><span id="mVal">—</span><span class="unit">M</span></span>
+          <span><span id="sVal">—</span><span class="unit">S</span></span>
+        </div>
+        <span class="sub">Next funding: <span id="fundingTime">—</span> • Mark (<span id="symbol">—</span>): <span id="markPrice">—</span> • <span id="quoteBadge">—</span></span>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import initNKO from './nko-binance.js';
+    initNKO({
+      symbol: 'BTCUSDT',
+      elements: {
+        fundingTimeEl: document.getElementById('fundingTime'),
+        hEl: document.getElementById('hVal'),
+        mEl: document.getElementById('mVal'),
+        sEl: document.getElementById('sVal'),
+        statusDot: document.getElementById('statusDot'),
+        statusText: document.getElementById('statusText'),
+        countdown: document.getElementById('countdown'),
+        markPriceEl: document.getElementById('markPrice'),
+        symbolEl: document.getElementById('symbol'),
+        quoteBadgeEl: document.getElementById('quoteBadge'),
+      }
+    });
+  </script>
+</body>
+</html>
