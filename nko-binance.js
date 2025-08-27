@@ -2,6 +2,7 @@
 export default function initNKO(options = {}) {
   const {
     symbol = 'BTCUSDT',
+    debug, // optional callback(msg)
     elements: {
       fundingTimeEl,
       hEl, mEl, sEl,
@@ -11,16 +12,14 @@ export default function initNKO(options = {}) {
     } = {}
   } = options;
 
+  const dbg = (m) => { try { if (typeof debug === 'function') debug(m); } catch(_) {} };
+
   let ws = null;
   let nextFundingMs = null;
   let currentQuote = null;
   let lastMarkPrice = null;
 
   const EIGHT_HOURS = 8 * 60 * 60 * 1000;
-
-  const debug = (typeof URLSearchParams !== 'undefined' && new URLSearchParams(location.search).has('debug')) ||
-                (typeof localStorage !== 'undefined' && localStorage.getItem('nko_debug') === '1');
-  const log = (...args) => { if (debug) console.log('[NKO]', ...args); };
 
   function setStatus(connected) {
     if (!statusDot || !statusText || !countdown) return;
@@ -118,9 +117,9 @@ export default function initNKO(options = {}) {
   function connect() {
     const url = `wss://fstream.binance.com/ws/${symbol.toLowerCase()}@markPrice@1s`;
     try { if (ws && ws.readyState === WebSocket.OPEN) ws.close(); } catch {}
-    log('WS connecting to', url);
+    dbg('WS connecting: ' + url);
     ws = new WebSocket(url);
-    ws.onopen = () => { retry = 0; setStatus(true); log('WS open'); };
+    ws.onopen = () => { retry = 0; setStatus(true); dbg('WS open'); };
     ws.onmessage = (msg) => {
       try {
         const d = JSON.parse(msg.data);
@@ -138,14 +137,14 @@ export default function initNKO(options = {}) {
           lastMarkPrice = Number(d.p);
           if (markPriceEl) markPriceEl.textContent = fmtPrice(lastMarkPrice);
         }
-      } catch (e) { console.warn('[NKO] WS parse error', e); }
+      } catch (e) { dbg('WS parse error'); }
     };
-    ws.onerror = (ev) => { log('WS error', ev); };
+    ws.onerror = (ev) => { dbg('WS error'); };
     ws.onclose = (ev) => {
       setStatus(false);
       retry++;
       const delay = nextDelay();
-      log(`WS closed (code=${ev.code} reason=${ev.reason || 'n/a'}) → retry in ${Math.round(delay)}ms`);
+      dbg(`WS closed code=${ev.code} reason=${ev.reason || 'n/a'} clean=${ev.wasClean} retry=${Math.round(delay)}ms`);
       setTimeout(connect, delay);
     };
   }
@@ -164,7 +163,7 @@ export default function initNKO(options = {}) {
         if (lastMarkPrice != null && markPriceEl) { markPriceEl.textContent = fmtPrice(lastMarkPrice); }
       }
       if (j.markPrice) { lastMarkPrice = Number(j.markPrice); if (markPriceEl) markPriceEl.textContent = fmtPrice(lastMarkPrice); }
-    } catch (err) { console.warn('[NKO] REST refresh failed', err); }
+    } catch (err) { dbg('REST error ' + (err && err.message ? err.message : '')); }
   }
 
   // boot
